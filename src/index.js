@@ -1,14 +1,16 @@
 const express = require("express");
-const { default: mongoose } = require("mongoose");
-const { MONGO_URL } = require("./config");
-const app = express();
+const mongoose = require("mongoose");
+const { MONGO_URL, FRONTEND_URL } = require("./config");
+const cors = requrie("cors");
+const cookieParser = require("cookie-parser");
 
-const connectDB = async () => {
-    await mongoose.connect(MONGO_URL)
-        .then(() => console.log(`mongodb connected`))
-        .catch((err) => console.log(`error from db: ${err}`));
-}
-connectDB();
+const app = express();
+app.use(express.json());
+app.use(cors({
+    origin: FRONTEND_URL,
+    credentials:true,
+}))
+app.use(cookieParser());
 
 app.post("/signup", (req, res) => {
     const { firstName, lastName, email, password } = req.body;

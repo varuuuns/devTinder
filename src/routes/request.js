@@ -1,84 +1,108 @@
 const express = require("express");
 const { userAuth } = require("../middlewares/auth");
-const { ConnectionRequest } = require("../models/connectionRequest");
-const { User } = require("../models/user");
-const requestRouter = express.Router();
+const ConnectionRequest = require("../models/connectionRequest");
+const userRouter = express.Router();
+const User = require("../models/user");
 
-requestRouter.post("/request/send/:status/:toUserId", userAuth, async (req, res) => {
-    try {
-        const fromUserId = req.user._id;
-        const toUserId = req.params.toUserId;
-        const status = req.params.status;
+const USER_SAFE_DATA = "firstName lastName age gender about skills photoUrl";
 
-        const allowedStatus = ["ignored", "interested"];
-        if (!allowedStatus.includes(status)) {
-            return res.status(400).json({ msg: `invalid status type: ${status}` });
-        }
-
-        const toUser = await User.findById(toUserId);
-        if (!toUser) return res.status(400).json({ msg: "user not found" });
-
-        // main thing to write this is to check if A sent a request to B then B should be able to send request to A
-        const existingConnectionRequest = await ConnectionRequest.findOne({
-            $or: [ // or condition
-                { fromUserId, toUserId }, // check in db if there exists something from A to B
-                { fromUserId: toUserId, toUserId: fromUserId } // check from B to A
-            ]
-        })
-        if (existingConnectionRequest) {
-            return res.status(400).json({ msg: `request already exists with status: ${existingConnectionRequest.status}` });
-        }
-
-        const connectionRequest = new ConnectionRequest({
-            fromUserId,
-            toUserId,
-            status
-        })
-        const data = await connectionRequest.save();
-
-        res.json({
-            msg: `${req.user.firstName} is now ${status} in ${toUser.firstName}.`,
-            data
-        })
-    }
-    catch (err) {
-        console.log(`error from routes/request :${err}`);
-        res.status(400).send(`error ${err}`);
-    }
-})
-
-requestRouter.post("/request/review/:status/:requestId", userAuth, async (req, res) => {
+userRouter.get("/user/requests/received", userAuth, async (req, res) => {
     try {
         const loggedInUser = req.user;
-        const { status, requestId } = req.params;
 
-        const allowedStatus = ["ignored", "interested"];
-        if (!allowedStatus.includes(status)) {
-            return res.status(400).json({ msg: `invalid status type: ${status}` });
-        }
-
-        const connectionRequest = await ConnectionRequest.findOne({
-            _id: requestId,
+        const connectionRequests = await ConnectionRequest.find({
             toUserId: loggedInUser._id,
             status: "interested",
-        });
-        if (!connectionRequest) {
-            return res.status(404).json({ msg: `connection request not found` });
+        }).populate("fromUserId", [
+            "firstName",
+            "lastName",
+            "photoUrl",
+            "gender",
+            "about",
+            "skills",
+        ]);
+
+        if (!connectionRequests) {
+            throw new Error("no requests exists");
         }
 
-        connectionRequest.status = status;
-        
-        const data = await connectionRequest.save();
         res.json({
-            msg: `connection request ${data}`,
-            data
-        })
+            message: "data fetched sucessfully",
+            data: connectionRequests,
+        });
+    } catch (error) {
+        res.send("error is" + error.message);
     }
-    catch (err) {
-        console.log(`error from routes/request :${err}`);
-        res.status(400).send(`error :${err}`);
-    } 
-})
+});
 
+userRouter.get("/user/connections", userAuth, async (req, res) => {
+    try {
+        const loggedInUser = req.user;
 
-module.exports = { requestRouter };
+        const connectionRequests = await ConnectionRequest.find({
+            $or: [{ toUserId: loggedInUser._id }, { fromUserId: loggedInUser._id }],
+            status: "accepted",
+        })
+            .populate("fromUserId", USER_SAFE_DATA)
+            .populate("toUserId", USER_SAFE_DATA);
+
+        const data = connectionRequests.map((row) => {
+            if (row.fromUserId._id.toString() == loggedInUser._id.toString()) {
+                return row.toUserId;
+            } else {
+                return row.fromUserId;
+            }
+        });
+
+        if (!connectionRequests) {
+            throw new Error("no connection exists");
+        }
+
+        res.json({
+            message: "data fetched sucessfully",
+            data,
+        });
+    } catch (error) {
+        res.send("error is" + error.message);
+    }
+});
+
+userRouter.get("/feed", userAuth, async (req, res) => {
+    try {
+        //see all cards except his,his connections,ignord people,already sent request
+        const loggedInUser = req.user;
+
+        const page = parseInt(req.query.page) || 1;
+        let limit = parseInt(req.query.limit) || 10;
+        limit = limit > 50 ? 50 : limit;
+
+        const skip = (page - 1) * limit;
+
+        const connectionRequests = await ConnectionRequest.find({
+            $or: [{ fromUserId: loggedInUser._id },
+            { toUserId: loggedInUser._id }],
+        });
+
+        const hideUserFromFeed = new Set();
+
+        connectionRequests.forEach((req) => {
+            hideUserFromFeed.add(req.fromUserId.toString());
+            hideUserFromFeed.add(req.toUserId.toString());
+        })
+
+        const users = await User.find({
+            $and: [{ _id: { $nin: Array.from(hideUserFromFeed) } },
+            { _id: { $ne: loggedInUser._id } }
+            ]
+
+        }).select(USER_SAFE_DATA).skip(skip).limit(limit);
+
+        res.json({ data: users });
+    } catch (error) {
+        res.status(400).json({
+            message: error.message,
+        });
+    }
+});
+
+module.exports = userRouter;

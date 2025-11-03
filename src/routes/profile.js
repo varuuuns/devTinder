@@ -8,15 +8,11 @@ profileRouter.get("/profile/view", userAuth, async (req, res) => {
     try {
         const user = req.user;
 
-        res.json({
-            msg: "Profile fetched successfully",
-            data: user
-        });
+        res.send(user);
     } catch (err) {
         res.status(400).send("ERROR : " + err.message);
     }
 });
-
 profileRouter.patch("/profile/edit", userAuth, async (req, res) => {
     try {
         if (!validateEditProfileData(req)) {
@@ -37,7 +33,4 @@ profileRouter.patch("/profile/edit", userAuth, async (req, res) => {
         res.status(400).send("ERROR : " + err.message);
     }
 });
-
-//have to implement forgot password thing
-
-module.exports = profileRouter;
+module.exports = profileRouter

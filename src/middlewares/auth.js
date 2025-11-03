@@ -1,25 +1,30 @@
+
 const jwt = require("jsonwebtoken");
-const { JWT_SECRET } = require("../config");
-const { User } = require("../models/user");
+const User = require("../models/user");
 
 const userAuth = async (req, res, next) => {
     try {
         const { token } = req.cookies;
-        if (!token) return res.status(401).json({"msg":"please login!"});
+        if (!token) {
+            return res.status(401).send("Please Login!");
+        }
 
-        const decode = await jwt.verify(token, JWT_SECRET);
-        const { _id } = decode;
+        const decodedObj = await jwt.verify(token, "DEV@Tinder$790");
+
+        const { _id } = decodedObj;
 
         const user = await User.findById(_id);
-        if (!user) return res.status(401).json({ msg: "no user found" });
+        if (!user) {
+            throw new Error("User not found");
+        }
 
         req.user = user;
         next();
+    } catch (err) {
+        res.status(400).send("ERROR: " + err.message);
     }
-    catch (err) {
-        console.log(`error from middlewares/auth.js :${err}`)
-        res.status(401).json({"msg":`invalid or expired token`});
-    }
-}
+};
 
-module.exports = { userAuth };
+module.exports = {
+    userAuth,
+};

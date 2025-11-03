@@ -1,8 +1,8 @@
 const jwt = require("jsonwebtoken");
 const { JWT_SECRET } = require("../config");
-const { User } = require("../db");
+const { User } = require("../models/user");
 
-export const userAuth = async (req, res, sent) => {
+const userAuth = async (req, res, next) => {
     try {
         const { token } = req.cookies;
         if (!token) return res.status(401).send("please login!");
@@ -20,3 +20,5 @@ export const userAuth = async (req, res, sent) => {
         res.status(400).send(`errror from auth.js :${err}`);
     }
 }
+
+module.exports = { userAuth };

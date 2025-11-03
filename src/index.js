@@ -1,26 +1,34 @@
 const express = require("express");
-const mongoose = require("mongoose");
-const { MONGO_URL, FRONTEND_URL } = require("./config");
 const cors = requrie("cors");
+const { FRONTEND_URL } = require("./config");
 const cookieParser = require("cookie-parser");
+const { connectDB } = require("./config/database");
 
 const app = express();
-app.use(express.json());
 app.use(cors({
     origin: FRONTEND_URL,
-    credentials:true,
+    credentials: true,
+    methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization"]
 }))
+app.use(express.json());
 app.use(cookieParser());
 
-app.post("/signup", (req, res) => {
-    const { firstName, lastName, email, password } = req.body;
+const authRouter = require("./routes/auth");
+const profileRouter = require("./routes/profile");
+const requestRouter = require("./routes/request");
+const userRouter = require("./routes/user");
 
-})
+app.use("/", authRouter);
+app.use("/", profileRouter);
+app.use("/", requestRouter);
+app.use("/", userRouter);
 
-app.use("/", (req, res) => {
-    res.send("404 wrong page");
-})
-
-app.listen(3000, () => {
-    console.log(`server listening on 3333`);
+connectDB().then(() => {
+    console.log("db connected");
+    app.listen(3333, () => {
+        console.log("server running on port 3333");
+    })
+}).catch((err) => {
+    console.log(`db cannot be connected: ${err}`);
 })

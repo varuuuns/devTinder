@@ -1,7 +1,7 @@
 const mongoose = require("mongoose");
 
 const connectionRequestSchema = new mongoose.Schema({
-    fromUserId: { type: mongoose.Schema.Types.ObjectId, ref: "User", require: true },
+    fromUserId: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
     toUserId: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
     status: {
         type: String,
@@ -15,16 +15,9 @@ const connectionRequestSchema = new mongoose.Schema({
     { timestamps: true }
 );
 
+// this is compound index, its like checking for two indices, making the checks more faster
 connectionRequestSchema.index({ fromUserId: 1, toUserId: 1 });
 
-connectionRequestSchema.pre("save", function (next) {
-    const connectionRequest = this;
-    if (connectionRequest.fromUserId.equals(connectionRequest.toUserId)) {
-        throw new Error("cannot send connection requext to yourself");
-    }
-    next();
-})
+const ConnectionRequest = new mongoose.model("ConnectionRequest", connectionRequestSchema);
 
-const ConnectionRequestModel = new mongoose.model("ConnectionRequest", connectionRequestSchema);
-
-module.exports = ConnectionRequestModel;
+module.exports = { ConnectionRequest };

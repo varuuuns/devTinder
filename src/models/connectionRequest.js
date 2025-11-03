@@ -16,7 +16,7 @@ const connectionRequestSchema = new mongoose.Schema({
 );
 
 // this is compound index, its like checking for two indices, making the checks more faster
-connectionRequestSchema.index({ fromUserId: 1, toUserId: 1 });
+connectionRequestSchema.index({ fromUserId: 1, toUserId: 1 }, { unique: true });
 
 const ConnectionRequest = new mongoose.model("ConnectionRequest", connectionRequestSchema);
 

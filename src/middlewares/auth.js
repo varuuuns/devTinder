@@ -5,19 +5,20 @@ const { User } = require("../models/user");
 const userAuth = async (req, res, next) => {
     try {
         const { token } = req.cookies;
-        if (!token) return res.status(401).send("please login!");
+        if (!token) return res.status(401).json({"msg":"please login!"});
 
         const decode = await jwt.verify(token, JWT_SECRET);
         const { _id } = decode;
 
         const user = await User.findById(_id);
-        if (!user) throw new Error("user not found");
+        if (!user) return res.status(401).json({ msg: "no user found" });
 
         req.user = user;
         next();
     }
     catch (err) {
-        res.status(400).send(`errror from auth.js :${err}`);
+        console.log(`error from middlewares/auth.js :${err}`)
+        res.status(401).json({"msg":`invalid or expired token`});
     }
 }
 

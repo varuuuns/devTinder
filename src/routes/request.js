@@ -6,7 +6,7 @@ const requestRouter = express.Router();
 
 requestRouter.post("/request/send/:status/:toUserId", userAuth, async (req, res) => {
     try {
-        const fromUserId = rq.user._id;
+        const fromUserId = req.user._id;
         const toUserId = req.params.toUserId;
         const status = req.params.status;
 
@@ -26,7 +26,7 @@ requestRouter.post("/request/send/:status/:toUserId", userAuth, async (req, res)
             ]
         })
         if (existingConnectionRequest) {
-            return res.status(400).send({ msg: `connection already exists` });
+            return res.status(400).json({ msg: `request already exists with status: ${existingConnectionRequest.status}` });
         }
 
         const connectionRequest = new ConnectionRequest({
@@ -37,7 +37,7 @@ requestRouter.post("/request/send/:status/:toUserId", userAuth, async (req, res)
         const data = await connectionRequest.save();
 
         res.json({
-            msg: req.user.firstName + "is" + status + "in" + toUser.firstName,
+            msg: `${req.user.firstName} is now ${status} in ${toUser.firstName}.`,
             data
         })
     }

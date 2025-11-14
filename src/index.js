@@ -1,36 +1,35 @@
-const validator = require("validator");
+const express = require("express");
+const connectDB = require("./config/database");
+const app = express();
+const cookieParser = require("cookie-parser");
+const cors = require("cors");
 
-const validateSignUpData = (req) => {
-    const { firstName, lastName, emailId, password } = req.body;
-    if (!firstName || !lastName) {
-        throw new Error("Name is not valid!");
-    } else if (!validator.isEmail(emailId)) {
-        throw new Error("Email is not valid!");
-    } else if (!validator.isStrongPassword(password)) {
-        throw new Error("Please enter a strong Password!");
-    }
-};
+app.use(cors({
+    origin: "http://localhost:5173",
+    credentials: true,               
+    methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization"],
+}));
 
-const validateEditProfileData = (req) => {
-    const allowedEditFields = [
-        "firstName",
-        "lastName",
-        "emailId",
-        "photoUrl",
-        "gender",
-        "age",
-        "about",
-        "skills",
-    ];
+app.use(express.json());
+app.use(cookieParser());
 
-    const isEditAllowed = Object.keys(req.body).every((field) =>
-        allowedEditFields.includes(field)
-    );
+const authRouter = require("./routes/auth");
+const profileRouter = require("./routes/profile");
+const requestRouter = require("./routes/request");
+const userRouter = require("./routes/user");
+const { PORT } = require("./config");
 
-    return isEditAllowed;
-};
+app.use("/", authRouter);
+app.use("/", profileRouter);
+app.use("/", requestRouter);
+app.use("/", userRouter);
 
-module.exports = {
-    validateSignUpData,
-    validateEditProfileData,
-};
+connectDB().then(() => {
+    console.log("database has been connected");
+    app.listen(PORT, () => {
+        console.log("sucessfully running on port 3000"); 
+    });
+}).catch((err) => {
+    console.log("database cannot be connected");
+});

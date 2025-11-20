@@ -1,9 +1,3 @@
-
----
-
-# 📌 ** DevTinder - Developer Matchmaking App**
-
-```markdown
 # 💼 DevTinder — Developer Matchmaking Platform
 
 A full-stack application that connects developers based on similar skills, interests, and tech stacks.

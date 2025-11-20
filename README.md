@@ -19,7 +19,7 @@ A full-stack application that connects developers based on similar skills, inter
 
 Frontend: React, Redux Toolkit, Tailwind  
 Backend: Node.js, Express.js, Mongoose  
-Database: MongoDB Atlas  
+Database: MongoDB Compass
 Auth: JWT + HTTP-Only Cookies  
 Deployment: Vercel / Render  
 

@@ -8,7 +8,7 @@ app.use(cors({
     origin: ["http://localhost:5173", "https://dev-tinder-lyart-rho.vercel.app/"] ,
     credentials: true,               
     methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
-    allowedHeaders: ["Content-Type", "Authorization"],
+    allowedHeaders: ["Content-Type", "Authorization", "Accept"],
 }));
 
 app.use(express.json());
@@ -28,7 +28,7 @@ app.use("/", userRouter);
 connectDB().then(() => {
     console.log("database has been connected");
     app.listen(PORT, () => {
-        console.log("sucessfully running on port 3000"); 
+        console.log("sucessfully running on port"+PORT); 
     });
 }).catch((err) => {
     console.log("database cannot be connected");
